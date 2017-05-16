@@ -64,6 +64,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\CameraFollow.cs" />
+    <Compile Include="Assets\GrindRailNode.cs" />
     <Compile Include="Assets\HoverBoard.cs" />
     <Compile Include="Assets\Old\CameraFollow1.cs" />
     <Compile Include="Assets\Old\CameraFollow_Old.cs" />

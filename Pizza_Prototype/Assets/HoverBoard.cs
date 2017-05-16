@@ -32,6 +32,13 @@ public class HoverBoard : MonoBehaviour {
 
     bool Spinning = false;
 
+    bool Grinding = false;
+    Transform NextNode;
+
+    float originalVelocityMagnitude;
+
+    LineRenderer myLine;
+
     // Use this for initialization
     void Start() {
         myBody = GetComponent<Rigidbody>();
@@ -39,6 +46,8 @@ public class HoverBoard : MonoBehaviour {
         goalForward = transform.forward;
 
         Poles = GameObject.FindGameObjectsWithTag("Pole");
+
+        myLine = GetComponentInChildren<LineRenderer>();
     }
 
     // Update is called once per frame
@@ -58,15 +67,22 @@ public class HoverBoard : MonoBehaviour {
         if (pushTime > 0)
         {
             GetComponentInChildren<Renderer>().material.color = Color.green;
-            pushTime -= Time.deltaTime * 2;
+            pushTime -= Time.deltaTime * 10;
 
-            if (pushTime > 0.4f && pushTime < 0.9f && (ProjectedVelocity.magnitude < maxSpeed || Vector3.Dot(ProjectedVelocity.normalized, transform.forward) < 0))
+            if ((ProjectedVelocity.magnitude < maxSpeed || Vector3.Dot(ProjectedVelocity.normalized, transform.forward) < 0.8f))
             {
-                //GetComponentInChildren<Renderer>().material.color = Color.red;
-                myBody.AddForce(transform.forward * 60);
-                if (BoostGrounded)
+                if (pushTime > 0.5f)
                 {
-                    myBody.AddForce(transform.forward * 50);
+                    //GetComponentInChildren<Renderer>().material.color = Color.red;
+                    myBody.AddForce(transform.forward * (200));
+                    if (BoostGrounded)
+                    {
+                        myBody.AddForce(transform.forward * 50);
+                    }
+                }
+                else
+                {
+                    //myBody.velocity = Vector3.zero;
                 }
             }
         }
@@ -96,6 +112,7 @@ public class HoverBoard : MonoBehaviour {
             //varries from 1 to 5.
             centripitalForce = Mathf.Sqrt(centripitalForce);
 
+            centripitalForce *= 1.5f;
 
             if (Grounded == false)
             {
@@ -135,7 +152,33 @@ public class HoverBoard : MonoBehaviour {
         {
             RopeAroundPole();
         }
-        //transform.eulerAngles = new Vector3(transform.eulerAngles.x, transform.eulerAngles.y, 0);
+
+        if (Grinding)
+        {
+            Grind();
+        }
+
+    }
+
+    public void GrindToward(Transform nextNode)
+    {
+        Grinding = true;
+        NextNode = nextNode;
+    }
+
+    public void EndGrind()
+    {
+        Grinding = false;
+        transform.forward = Vector3.ProjectOnPlane(myBody.velocity, Vector3.up);
+        myLine.SetPositions(null);
+    }
+
+    void Grind()
+    {
+        transform.forward = (NextNode.position - transform.position).normalized;
+        myBody.velocity = transform.forward * 40;
+        Vector3[] positions = { transform.position, NextNode.position };
+        myLine.SetPositions(positions);
 
     }
 
@@ -143,9 +186,18 @@ public class HoverBoard : MonoBehaviour {
     {
         Vector3 vecToPole = AttachedPole.position - transform.position;
         Vector3 projectedVecToPole = Vector3.ProjectOnPlane(vecToPole, AttachedPole.up);
+        Vector3[] positions = { transform.position, transform.position + projectedVecToPole };
+        myLine.SetPositions(positions);
+
         if (Spinning)
         {
+            Vector3 originalForward = transform.forward;
             transform.forward = -Vector3.Cross(projectedVecToPole.normalized, AttachedPole.up);
+            if (Vector3.Dot(originalForward, transform.forward) < 0)
+            {
+                transform.forward = -transform.forward;
+            }
+
             myBody.velocity = (transform.forward + transform.up * 0.5f).normalized * 40;
         }
         else
@@ -186,6 +238,7 @@ public class HoverBoard : MonoBehaviour {
             }
             else
             {
+                myLine.SetPositions(new Vector3[0]);
                 AttachedPole = null;
             }
         }
@@ -240,6 +293,7 @@ public class HoverBoard : MonoBehaviour {
 	{
         if (pushTime <= 0)
         {
+            originalVelocityMagnitude = myBody.velocity.magnitude * 3;
             pushTime = 1;
         }
 	}
