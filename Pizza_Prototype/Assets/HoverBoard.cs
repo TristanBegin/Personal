@@ -39,6 +39,11 @@ public class HoverBoard : MonoBehaviour {
 
     LineRenderer myLine;
 
+    float timeSinceGrind = 0;
+
+    bool Charging = false;
+    float ChargeTime = 0;
+
     // Use this for initialization
     void Start() {
         myBody = GetComponent<Rigidbody>();
@@ -156,27 +161,65 @@ public class HoverBoard : MonoBehaviour {
         if (Grinding)
         {
             Grind();
+            timeSinceGrind = 0;
+        }
+        timeSinceGrind += Time.deltaTime;
+
+        if (Charging)
+        {
+            ChargeTime += Time.deltaTime * 10;
+            ChargeTime = Mathf.Clamp(ChargeTime, 0, 10);
+
+            myBody.velocity = Vector3.zero;
+
+            if (Input.GetButton("Y_Button") == false)
+            {
+                Charging = false;
+                myBody.velocity = transform.forward * (ChargeTime + 1) * 10;
+                ChargeTime = 0;
+            }
         }
 
     }
 
     public void GrindToward(Transform nextNode)
     {
+        if (timeSinceGrind < 2)
+        {
+            return;
+        }
+
         Grinding = true;
         NextNode = nextNode;
     }
 
     public void EndGrind()
     {
+        if (Grinding == false)
+        {
+            return;
+        }
+
         Grinding = false;
         transform.forward = Vector3.ProjectOnPlane(myBody.velocity, Vector3.up);
-        myLine.SetPositions(null);
+        myLine.SetPositions(new Vector3[0]);
     }
 
     void Grind()
     {
         transform.forward = (NextNode.position - transform.position).normalized;
+
+        //if (Vector3.Dot(transform.forward, myBody.velocity.normalized) > 0)
+        //{
+        //    myBody.velocity = transform.forward * myBody.velocity.magnitude;
+        //}
+        //else
+        //{
+        //    myBody.velocity = -transform.forward * myBody.velocity.magnitude;
+        //}
+
         myBody.velocity = transform.forward * 40;
+
         Vector3[] positions = { transform.position, NextNode.position };
         myLine.SetPositions(positions);
 
@@ -198,7 +241,7 @@ public class HoverBoard : MonoBehaviour {
                 transform.forward = -transform.forward;
             }
 
-            myBody.velocity = (transform.forward + transform.up * 0.5f).normalized * 40;
+            myBody.velocity = new Vector3(transform.forward.x * 40, myBody.velocity.y, transform.forward.z * 40);
         }
         else
         {
@@ -219,6 +262,7 @@ public class HoverBoard : MonoBehaviour {
         if (Input.GetButtonDown("A_Button"))
         {
             Jump();
+            EndGrind();
         }
 
         if (Input.GetButtonDown("X_Button"))
@@ -243,7 +287,12 @@ public class HoverBoard : MonoBehaviour {
             }
         }
 
-        Lean(Input.GetAxis("Horizontal"));
+        if (Input.GetButtonDown("Y_Button"))
+        {
+            Charging = true;
+        }
+
+            Lean(Input.GetAxis("Horizontal"));
 
         BrakingPower = 1 - Input.GetAxis("Vertical");
         BrakingPower *= BrakingPower * BrakingPower * BrakingPower * BrakingPower;
