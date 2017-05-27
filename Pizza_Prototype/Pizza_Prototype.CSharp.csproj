@@ -65,13 +65,17 @@
   <ItemGroup>
     <Compile Include="Assets\CameraFollow.cs" />
     <Compile Include="Assets\GrindRailNode.cs" />
+    <Compile Include="Assets\Hook.cs" />
+    <Compile Include="Assets\HookShooter.cs" />
     <Compile Include="Assets\HoverBoard.cs" />
     <Compile Include="Assets\Old\CameraFollow1.cs" />
     <Compile Include="Assets\Old\CameraFollow_Old.cs" />
     <Compile Include="Assets\Old\HoverBoard_Old.cs" />
+    <Compile Include="Assets\Old\HoverBoard_Old2.cs" />
     <Compile Include="Assets\Old\Orb_Mod.cs" />
     <Compile Include="Assets\Old\Orb_Mod_Top.cs" />
     <Compile Include="Assets\Parent_Position.cs" />
+    <Compile Include="Assets\ParentedCamera.cs" />
     <Compile Include="Assets\Player.cs" />
   </ItemGroup>
   <ItemGroup>

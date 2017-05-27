@@ -26,15 +26,6 @@ public class HoverBoard : MonoBehaviour {
 
     Transform AttachedPole = null;
 
-    float GrappleRange = 40;
-
-    GameObject[] Poles;
-
-    bool Spinning = false;
-
-    bool Grinding = false;
-    Transform NextNode;
-
     float originalVelocityMagnitude;
 
     LineRenderer myLine;
@@ -44,15 +35,15 @@ public class HoverBoard : MonoBehaviour {
     bool Charging = false;
     float ChargeTime = 0;
 
+    GameObject HookedObject;
+
     // Use this for initialization
     void Start() {
         myBody = GetComponent<Rigidbody>();
 
         goalForward = transform.forward;
 
-        Poles = GameObject.FindGameObjectsWithTag("Pole");
-
-        myLine = GetComponentInChildren<LineRenderer>();
+        
     }
 
     // Update is called once per frame
@@ -127,7 +118,7 @@ public class HoverBoard : MonoBehaviour {
         }
 
 
-        centripitalForce = Mathf.Clamp(centripitalForce, 0.5f, 4);
+        centripitalForce = Mathf.Clamp(centripitalForce * 1.5f, 0.5f, 4);
 
 
         myBody.angularVelocity = new Vector3(0, leanValue * centripitalForce, 0);
@@ -143,26 +134,13 @@ public class HoverBoard : MonoBehaviour {
             Vector3 velocity = velDirection * velMagnitude;
             Vector3 goalVel = new Vector3(velocity.x, myBody.velocity.y, velocity.z);
 
-            if (Spinning)
-            {
-                myBody.velocity = goalVel;
-            }
-            else
-            {
-                myBody.velocity += (goalVel - myBody.velocity) * Time.deltaTime * 4;
-            }
+
+            myBody.velocity += (goalVel - myBody.velocity) * Time.deltaTime * 4;
+
         }
 
-        if (AttachedPole != null)
-        {
-            RopeAroundPole();
-        }
 
-        if (Grinding)
-        {
-            Grind();
-            timeSinceGrind = 0;
-        }
+
         timeSinceGrind += Time.deltaTime;
 
         if (Charging)
@@ -182,75 +160,7 @@ public class HoverBoard : MonoBehaviour {
 
     }
 
-    public void GrindToward(Transform nextNode)
-    {
-        if (timeSinceGrind < 2)
-        {
-            return;
-        }
 
-        Grinding = true;
-        NextNode = nextNode;
-    }
-
-    public void EndGrind()
-    {
-        if (Grinding == false)
-        {
-            return;
-        }
-
-        Grinding = false;
-        transform.forward = Vector3.ProjectOnPlane(myBody.velocity, Vector3.up);
-        myLine.SetPositions(new Vector3[0]);
-    }
-
-    void Grind()
-    {
-        transform.forward = (NextNode.position - transform.position).normalized;
-
-        //if (Vector3.Dot(transform.forward, myBody.velocity.normalized) > 0)
-        //{
-        //    myBody.velocity = transform.forward * myBody.velocity.magnitude;
-        //}
-        //else
-        //{
-        //    myBody.velocity = -transform.forward * myBody.velocity.magnitude;
-        //}
-
-        myBody.velocity = transform.forward * 40;
-
-        Vector3[] positions = { transform.position, NextNode.position };
-        myLine.SetPositions(positions);
-
-    }
-
-    void RopeAroundPole()
-    {
-        Vector3 vecToPole = AttachedPole.position - transform.position;
-        Vector3 projectedVecToPole = Vector3.ProjectOnPlane(vecToPole, AttachedPole.up);
-        Vector3[] positions = { transform.position, transform.position + projectedVecToPole };
-        myLine.SetPositions(positions);
-
-        if (Spinning)
-        {
-            Vector3 originalForward = transform.forward;
-            transform.forward = -Vector3.Cross(projectedVecToPole.normalized, AttachedPole.up);
-            if (Vector3.Dot(originalForward, transform.forward) < 0)
-            {
-                transform.forward = -transform.forward;
-            }
-
-            myBody.velocity = new Vector3(transform.forward.x * 40, myBody.velocity.y, transform.forward.z * 40);
-        }
-        else
-        {
-            if (Vector3.Dot(transform.forward, projectedVecToPole.normalized) < 0)
-            {
-                Spinning = true;
-            }
-        }
-    }
 
     void CheckInput()
     {
@@ -262,29 +172,11 @@ public class HoverBoard : MonoBehaviour {
         if (Input.GetButtonDown("A_Button"))
         {
             Jump();
-            EndGrind();
         }
 
         if (Input.GetButtonDown("X_Button"))
         {
-            if (AttachedPole == null)
-            {
-                foreach (GameObject Pole in Poles)
-                {
-                    Vector3 projectedVecToPole = Vector3.ProjectOnPlane((Pole.transform.position - transform.position), Pole.transform.up);
-                    if (projectedVecToPole.magnitude < GrappleRange && Vector3.Dot(transform.forward, projectedVecToPole.normalized) > 0)
-                    {
-                        Spinning = false;
-                        AttachedPole = Pole.transform;
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                myLine.SetPositions(new Vector3[0]);
-                AttachedPole = null;
-            }
+            
         }
 
         if (Input.GetButtonDown("Y_Button"))

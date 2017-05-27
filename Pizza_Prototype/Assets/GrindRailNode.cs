@@ -24,11 +24,11 @@ public class GrindRailNode : MonoBehaviour {
                 {
                     if (NextNode != null)
                     {
-                        hit.transform.GetComponent<HoverBoard>().GrindToward(NextNode);
+                        //hit.transform.GetComponent<HoverBoard>().GrindToward(NextNode);
                     }
                     else
                     {
-                        hit.transform.GetComponent<HoverBoard>().EndGrind();
+                        //hit.transform.GetComponent<HoverBoard>().EndGrind();
                     }
                 }
             }
@@ -45,11 +45,11 @@ public class GrindRailNode : MonoBehaviour {
         {
             if (NextNode != null)
             {
-                hit.GetComponent<HoverBoard>().GrindToward(NextNode);
+                //hit.GetComponent<HoverBoard>().GrindToward(NextNode);
             }
             else
             {
-                hit.GetComponent<HoverBoard>().EndGrind();
+                //hit.GetComponent<HoverBoard>().EndGrind();
             }
         }
 	}

@@ -1,0 +1,18 @@
+﻿<Properties StartupItem="Assembly-CSharp.csproj">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Unity.Instance.Unity Editor" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Sword_Controls.cs">
+    <Files>
+      <File FileName="Assets\ATV_Controls.cs" Line="1" Column="1" />
+      <File FileName="Assets\Sword_Controls.cs" Line="34" Column="11" />
+      <File FileName="Assets\Tools.cs" Line="1" Column="1" />
+      <File FileName="Assets\shootAtTarget.cs" Line="1" Column="1" />
+      <File FileName="Assets\MoveTowardTarget.cs" Line="1" Column="1" />
+      <File FileName="Assets\Target.cs" Line="1" Column="1" />
+      <File FileName="Assets\CameraController.cs" Line="1" Column="1" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+</Properties>
