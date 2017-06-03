@@ -15,7 +15,7 @@ public class ParentedCamera : MonoBehaviour {
 
     CameraMode mode = CameraMode.BACK;
 
-    float distance = 10;
+    float distance = 15;
     float height = 5;
 
     float angle = 90;
@@ -25,9 +25,9 @@ public class ParentedCamera : MonoBehaviour {
     {
 	
 	}
-	
-	// Update is called once per frame
-	void Update ()
+
+    // Update is called once per frame
+    void Update()
     {
 
         if (Input.GetButtonDown("RB"))
@@ -62,7 +62,29 @@ public class ParentedCamera : MonoBehaviour {
         }
 
         transform.localPosition = new Vector3(0, height, -distance);
-        transform.localPosition = Quaternion.Euler(0, angle, 0) * transform.localPosition;
+
+        GameObject hookedObject = GetComponentInParent<HookShooter>().GetHookedObject();
+        if (hookedObject != null)
+        {
+            Vector3 lookVector = hookedObject.transform.position - transform.parent.position;
+            Vector3 mod_lookVector = Vector3.ProjectOnPlane(lookVector.normalized, transform.parent.up);
+            //Vector3 toTargetVector = target.position - transform.position;
+            //Vector3 mod_toTargetVector = Vector3.ProjectOnPlane(toTargetVector.normalized, transform.parent.up);
+            //angle = Vector3.Angle(mod_toTargetVector, mod_lookVector);
+            //
+            //transform.localPosition = Quaternion.* transform.localPosition;
+            //
+            //if (Vector3.Dot(Vector3.ProjectOnPlane(transform.localPosition, Vector3.up), mod_toTargetVector) > 0)
+            //{
+            //    transform.localPosition = new Vector3 (-transform.localPosition.x, transform.localPosition.y, -transform.position.z);
+            //}
+            transform.position = transform.parent.position + new Vector3(-mod_lookVector.x * distance, height, -mod_lookVector.z * distance);
+        }
+        else
+        {
+            //transform.localPosition = Quaternion.Euler(0, angle, 0) * transform.localPosition;
+        }
+
         transform.LookAt(target);
 
     }

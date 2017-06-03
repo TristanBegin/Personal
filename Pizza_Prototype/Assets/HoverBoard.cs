@@ -8,7 +8,7 @@ public class HoverBoard : MonoBehaviour {
     bool Grounded = false;
     Vector3 GroundedPoint;
     float desiredFloatingLevel = 1;
-    float maxSpeed = 50;
+    float maxSpeed = 40;
     float deceleration = 0.15f;
 
     float pushTime = 0;
@@ -35,19 +35,21 @@ public class HoverBoard : MonoBehaviour {
     bool Charging = false;
     float ChargeTime = 0;
 
-    GameObject HookedObject;
+    HookShooter hookShooter;
 
     // Use this for initialization
-    void Start() {
+    void Start()
+    {
         myBody = GetComponent<Rigidbody>();
 
         goalForward = transform.forward;
 
-        
+        hookShooter = GetComponent<HookShooter>();
     }
 
     // Update is called once per frame
-    void Update() {
+    void Update()
+    {
         CheckGrounded();
         CheckInput();
 
@@ -108,7 +110,7 @@ public class HoverBoard : MonoBehaviour {
             //varries from 1 to 5.
             centripitalForce = Mathf.Sqrt(centripitalForce);
 
-            centripitalForce *= 1.5f;
+            centripitalForce *= 2;
 
             if (Grounded == false)
             {
@@ -158,6 +160,30 @@ public class HoverBoard : MonoBehaviour {
             }
         }
 
+        if (hookShooter.GetHookedObject() != null)
+        {
+            GameObject hook = hookShooter.GetHookedObject();
+            float hookLength = hookShooter.GetHookLength();
+
+            Vector3 vecToHook = hook.transform.position - transform.position;
+
+            if (vecToHook.magnitude > hookLength)
+            {
+                if (Vector3.Dot(myBody.velocity.normalized, vecToHook.normalized) < 0)
+                {
+                    myBody.velocity = Vector3.ProjectOnPlane(myBody.velocity, vecToHook.normalized);
+                    if (Vector3.Dot(transform.forward, vecToHook.normalized) < 0)
+                    {
+                        transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(Vector3.ProjectOnPlane(myBody.velocity.normalized, Vector3.up), Vector3.up), Time.deltaTime * 80);
+                    }
+                }
+
+                Vector3 goalPosition = hook.transform.position - vecToHook.normalized * hookLength;
+                transform.position += (goalPosition - transform.position) * Time.deltaTime * 2;
+
+            }
+        }
+
     }
 
 
@@ -173,16 +199,7 @@ public class HoverBoard : MonoBehaviour {
         {
             Jump();
         }
-
-        if (Input.GetButtonDown("X_Button"))
-        {
-            
-        }
-
-        if (Input.GetButtonDown("Y_Button"))
-        {
-            Charging = true;
-        }
+        
 
             Lean(Input.GetAxis("Horizontal"));
 
@@ -227,7 +244,7 @@ public class HoverBoard : MonoBehaviour {
 
     void Jump()
     {
-        myBody.velocity = new Vector3(myBody.velocity.x, 20, myBody.velocity.z);
+        myBody.velocity = new Vector3(myBody.velocity.x, 25, myBody.velocity.z);
     }
 
 	public void PushForward()

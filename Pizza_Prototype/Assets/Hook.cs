@@ -10,8 +10,7 @@ public class Hook : MonoBehaviour {
 	
 	}
 	
-	// Update is called once per frame
-	void OnTriggerEnter2D (Collider2D hit)
+	void OnTriggerEnter (Collider hit)
     {
         Shooter.SendMessage("HookCaught", hit.gameObject);
 	}

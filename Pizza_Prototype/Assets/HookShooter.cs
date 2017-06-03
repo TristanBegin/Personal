@@ -12,6 +12,7 @@ public class HookShooter : MonoBehaviour {
     LineRenderer myLine;
 
     GameObject Hook;
+    float hookLength;
 
     float hookTime = 0;
 
@@ -23,7 +24,7 @@ public class HookShooter : MonoBehaviour {
 	// Update is called once per frame
 	void Update ()
     {
-	    if (Input.GetButtonDown("X_Button"))
+	    if (Input.GetButtonDown("RB") || Input.GetButtonDown("LB"))
         {
             Destroy(Hook);
 
@@ -31,6 +32,7 @@ public class HookShooter : MonoBehaviour {
             {
                 Hook = Instantiate(HookPrefab);
                 Hook.transform.position = transform.position;
+                Hook.GetComponent<Hook>().Shooter = gameObject;
                 Hook.GetComponent<Rigidbody>().velocity = Vector3.ProjectOnPlane(Camera.forward, transform.up) * 200;
             }
             else
@@ -45,8 +47,18 @@ public class HookShooter : MonoBehaviour {
             myLine.SetPositions(positions);
 
             hookTime += Time.deltaTime;
+                        
+            if (HookedObject != null)
+            {
+                Hook.transform.position = HookedObject.transform.position;
+                Hook.GetComponent<Rigidbody>().velocity = Vector3.zero;
 
-            if (hookTime > 1)
+                Debug.Log(hookLength);
+                hookLength += -Input.GetAxis("Triggers") * Time.deltaTime * 35;
+
+                hookLength = Mathf.Clamp(hookLength, 3, 100);
+            }
+            else if(hookTime > 1)
             {
                 Destroy(Hook);
                 Hook = null;
@@ -54,7 +66,6 @@ public class HookShooter : MonoBehaviour {
                 Vector3[] positionsNull = { Vector3.zero, Vector3.zero };
                 myLine.SetPositions(positionsNull);
             }
-
             
         }
 	}
@@ -64,11 +75,18 @@ public class HookShooter : MonoBehaviour {
         return HookedObject;
     }
 
+    public float GetHookLength()
+    {
+        return hookLength;
+    }
+
     void HookCaught(GameObject hit)
     {
-        if (Hookables == (Hookables | (1 << hit.layer)))
+        if (hit.tag == "Enemy" && HookedObject == null)
         {
+            Debug.Log("Hook");
             HookedObject = hit;
+            hookLength = (hit.transform.position - transform.position).magnitude;
         }
     }
 }
