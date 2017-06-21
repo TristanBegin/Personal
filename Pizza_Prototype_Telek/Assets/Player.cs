@@ -6,6 +6,7 @@ public class Player : MonoBehaviour {
 	public float Acceleration = 13;
 	public float Deceleration = 10;
 	public float Drag = 10;
+    public Transform StaminaBar;
 
 	public LayerMask GroundedMask;
 
@@ -17,46 +18,87 @@ public class Player : MonoBehaviour {
 
     bool WasNotRolling = true;
 
+    bool InUniverse = true;
+
+    float MaxStamina = 100;
+    float Stamina = 50;
+
 	// Use this for initialization
 	void Start ()
     {
 		myBody = GetComponent<Rigidbody>();
 		myCam = Camera.main;
-	}
+
+        UniverseContainer.PlayerEnterUniverse += OnPlayerEnterUniverse;
+        UniverseContainer.PlayerExitUniverse  += OnPlayerExitUniverse;
+    }
 	
 	// Update is called once per frame
 	void FixedUpdate () 
 	{
 		CheckGrounded();
 
-        if (Catcher.Rolling)
-        {
-            RollingMovement();
-        }
-        else
-        {
-            Movement();
-        }
+        StaminaBar.localScale = new Vector3(Stamina / MaxStamina, StaminaBar.localScale.y, 1);
 
-        if (Input.GetButtonDown("A_Button") && Grounded)
+        //if (Catcher.State == Catcher.States.Roll && (Stamina > 0 || Grounded))
+        //{
+        //    RollingMovement();
+        //}
+        //else if (Catcher.State == Catcher.States.Pull)
+        //{
+        //    PullingMovement();
+        //}
+        //else
+        //{
+            Movement();
+        //}
+
+        
+
+        if (Catcher.HitEnemyThisFrame)
         {
-            myBody.velocity = new Vector3(myBody.velocity.x, 14.5f, myBody.velocity.z);
+            myBody.velocity = new Vector3(myBody.velocity.x, 25, myBody.velocity.z);
         }
     }
 
-	void Update()
-	{
-        
-		
-	}
+    void Update()
+    {
+        if (Input.GetButtonDown("A_Button") && Grounded)
+        {
+            myBody.velocity = new Vector3(myBody.velocity.x, 20, myBody.velocity.z);
+        }
+    }
+
+    void OnPlayerEnterUniverse()
+    {
+        Debug.Log("Enter");
+        InUniverse = true;
+    }
+
+    void OnPlayerExitUniverse()
+    {
+        Debug.Log("Exit");
+        InUniverse = false;
+    }
+
+    void PullingMovement()
+    {
+        WasNotRolling = true;
+
+        myBody.AddForce((Catcher.telekPosition - transform.position).normalized * 300);
+
+        Movement();
+    }
 
     void RollingMovement()
     {
-        if (WasNotRolling)
+        if (WasNotRolling && Grounded == false)
         {
             WasNotRolling = false;
-            transform.forward = Vector3.ProjectOnPlane(myCam.transform.forward, transform.up);
+            //transform.forward = Vector3.ProjectOnPlane(myCam.transform.forward, transform.up);
+            //myBody.velocity = new Vector3(myBody.velocity.x, 25, myBody.velocity.z);
         }
+        
 
         Vector3 ProjectedVelocity = Vector3.ProjectOnPlane(myBody.velocity, transform.up);
 
@@ -86,7 +128,8 @@ public class Player : MonoBehaviour {
         centripitalForce = Mathf.Clamp(centripitalForce * 1.5f, 0.5f, 4);
 
         float leanValue = Input.GetAxis("Horizontal");
-        myBody.angularVelocity = new Vector3(0, leanValue * centripitalForce, 0);
+        float verticalLeanValue = 0;
+        myBody.angularVelocity = new Vector3(verticalLeanValue * centripitalForce, leanValue * centripitalForce, 0);
 
         Vector3 ProjectedForward = new Vector3(transform.forward.x, 0, transform.forward.z).normalized;
 
@@ -108,6 +151,9 @@ public class Player : MonoBehaviour {
         {
             myBody.AddForce(transform.up * 200);
         }
+
+        
+        //myBody.velocity = new Vector3(myBody.velocity.x, 0, myBody.velocity.z);
 
 
     }

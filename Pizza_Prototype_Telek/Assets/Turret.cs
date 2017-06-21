@@ -5,7 +5,9 @@ using UnityEngine;
 public class Turret : MonoBehaviour {
     public GameObject bulletPrefab;
     public Transform target;
-
+    public bool justShootForward;
+    public float bulletSpeed = 30;
+    public int bulletsPerShot = 4;
     float time = 0;
 
     int loop = 0;
@@ -20,17 +22,17 @@ public class Turret : MonoBehaviour {
         {
             GameObject clone = Instantiate(bulletPrefab);
             clone.transform.position = transform.position;
-            clone.GetComponent<Rigidbody>().velocity = (target.position - transform.position).normalized * 30;
+            clone.GetComponent<Rigidbody>().velocity = (justShootForward ? transform.forward : (target.position - transform.position).normalized) * bulletSpeed;
             clone.transform.forward = clone.GetComponent<Rigidbody>().velocity.normalized;
             loop++;
 
-            if (loop % 4 == 0)
+            if (loop % bulletsPerShot != 0 || (GetComponent<Pokable>() != null && GetComponent<Pokable>().IsPoked))
             {
-                time = 2;
+                time = 0.2f;
             }
             else
             {
-                time = 0.2f;
+                time = 2;
             }
         }
 

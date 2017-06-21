@@ -61,10 +61,10 @@ public class CameraFollow : MonoBehaviour {
             saved_vecToTarget.Normalize();
         }
 
-        if (Catcher.Rolling)
-        {
-            saved_vecToTarget = (target.forward * desiredDistance + target.up * -3).normalized;
-        }
+        //if (Catcher.Rolling)
+        //{
+        //    saved_vecToTarget += ((target.forward * desiredDistance + target.up * -3).normalized - saved_vecToTarget) * Time.deltaTime * 1.5f;
+        //}
 
         transform.LookAt(target_lazyPos);
 

@@ -1,10 +1,12 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public class Catcher : MonoBehaviour {
 
     public LayerMask TelekableMask;
+    public LayerMask PullableMask;
 
     List<GameObject> Arsenal = new List<GameObject>();
 
@@ -24,17 +26,18 @@ public class Catcher : MonoBehaviour {
 
     float MeleeLength = 1;
 
-    enum States
+    public enum States
     {
         Idle,
         Melee,
-        Roll
+        Roll,
+        Pull
     }
 
     float ActiveTimer = 0;
     float MaxActiveTimer = 5;
 
-    States State     = States.Idle;
+    public static States State     = States.Idle;
     int InnerState   = 0;
     float stateTimer = 0;
     float MeleeRange = 3;
@@ -47,12 +50,20 @@ public class Catcher : MonoBehaviour {
     Transform arsenalDirReference;
 
     GameObject myTelek;
+    Vector3 myTelekOGPosition;
+    bool pulling = false;
+
+    bool bulletCircle = true;
 
     Vector3 bulletForwardOverride = Vector3.zero;
 
-    public static bool Rolling { get { return instance.State == States.Roll; } }
+    public static bool Rolling { get { return State == States.Roll; } }
+
+    public static Vector3 telekPosition { get { return instance.myTelek.transform.position; } }
 
     public static Catcher instance;
+
+    public static bool HitEnemyThisFrame = false;
 
     // Use this for initialization
     void Start ()
@@ -72,6 +83,20 @@ public class Catcher : MonoBehaviour {
             Catching = true;
             CatchTime = MaxCatchTime;
             SetActive();
+        }
+
+        if (State == States.Melee)
+        {
+            HitEnemyThisFrame = false;
+            Physics.OverlapSphere(arsCenter, arsenalRadius).ToList().ForEach(col =>
+            {
+                if (col.tag == "Enemy")
+                {
+                    HitEnemyThisFrame = true;
+                    Debug.Log("HIT");
+                }
+            });
+            
         }
 
         if (Catching)
@@ -103,6 +128,7 @@ public class Catcher : MonoBehaviour {
             case States.Idle:  Idle();  break;
             case States.Melee: Melee(); break;
             case States.Roll:  Roll();  break;
+            case States.Pull:  Pull(); break;
         }
 
 
@@ -112,21 +138,24 @@ public class Catcher : MonoBehaviour {
 
         if (IsActive())
         {
-            for (int i = 0; i < Arsenal.Count; i++)
-            {
-                float indexOffset = ((float)i / Arsenal.Count) * Mathf.PI * 2;
-                Vector3 offsetVector = arsRight * Mathf.Sin(arsenalRotation + indexOffset) * arsenalRadius + arsUp * Mathf.Cos(arsenalRotation + indexOffset) * arsenalRadius;
-                Vector3 goalPosition = arsCenter + offsetVector;
-                Arsenal[i].transform.position += (goalPosition - Arsenal[i].transform.position) * Time.deltaTime * 20;
-                Arsenal[i].GetComponent<Rigidbody>().velocity = Vector3.zero;
-
-                Vector3 goalForward = offsetVector.normalized;
-                if (bulletForwardOverride.magnitude > 0.1f)
+            if (bulletCircle)
+            { 
+                for (int i = 0; i < Arsenal.Count; i++)
                 {
-                    goalForward = bulletForwardOverride;
-                }
+                    float indexOffset = ((float)i / Arsenal.Count) * Mathf.PI * 2;
+                    Vector3 offsetVector = arsRight * Mathf.Sin(arsenalRotation + indexOffset) * arsenalRadius + arsUp * Mathf.Cos(arsenalRotation + indexOffset) * arsenalRadius;
+                    Vector3 goalPosition = arsCenter + offsetVector;
+                    Arsenal[i].transform.position += (goalPosition - Arsenal[i].transform.position) * Time.deltaTime * 20;
+                    Arsenal[i].GetComponent<Rigidbody>().velocity = Vector3.zero;
 
-                Arsenal[i].transform.rotation = Quaternion.RotateTowards(Arsenal[i].transform.rotation, Quaternion.LookRotation(goalForward), Time.deltaTime * 800);
+                    Vector3 goalForward = offsetVector.normalized;
+                    if (bulletForwardOverride.magnitude > 0.1f)
+                    {
+                        goalForward = bulletForwardOverride;
+                    }
+
+                    Arsenal[i].transform.rotation = Quaternion.RotateTowards(Arsenal[i].transform.rotation, Quaternion.LookRotation(goalForward), Time.deltaTime * 800);
+                }
             }
         }
         else
@@ -144,37 +173,52 @@ public class Catcher : MonoBehaviour {
 
         Vector3 ShootDirection = (arsForward + arsenalParent.up * 0.175f).normalized;
 
-        if (Input.GetAxis("RightTrigger") < -0.1f || Input.GetButton("RB"))
+        if (Input.GetAxis("RightTrigger") < -0.1f || Input.GetAxis("LeftTrigger") < -0.1f || Input.GetButton("RB"))
         {
             SetActive();
             if (myTelek == null)
             {
-                if (Input.GetAxis("RightTrigger") < -0.1f)
+                if (Input.GetAxis("LeftTrigger") < -0.1f)
+                    pulling = true;
+                else
+                    pulling = false;
+
+                if (Input.GetAxis("RightTrigger") < -0.1f || Input.GetAxis("LeftTrigger") < -0.1f)
                 {
                     RaycastHit hit;
-                    Physics.SphereCast(arsCenter, arsenalRadius, arsForward, out hit, 100, TelekableMask);
+                    Physics.SphereCast(arsCenter, arsenalRadius * 3, arsForward, out hit, 100, Input.GetAxis("RightTrigger") < -0.1f ? TelekableMask : PullableMask);
                     if (hit.transform != null)
-                    {
                         myTelek = hit.transform.gameObject;
-                    }
                 }
                 else if (Arsenal.Count > 0)
                 {
                     myTelek = Arsenal[0];
                     Arsenal.RemoveAt(0);
                 }
+
+                if (myTelek != null)
+                    myTelekOGPosition = myTelek.transform.position;
             }
             else
             {
-                myTelek.transform.position += (arsCenter - myTelek.transform.position) * 14 * Time.deltaTime;
-                myTelek.GetComponent<Rigidbody>().velocity = Vector3.zero;
-                myTelek.GetComponent<Collider>().isTrigger = true;
-                myTelek.transform.rotation = Quaternion.RotateTowards(myTelek.transform.rotation, Quaternion.LookRotation(ShootDirection), Time.deltaTime * 800);
+                if (pulling)
+                {
+                    State = States.Pull;
+                }
+                else
+                {
+                    myTelek.transform.position += (arsCenter - myTelek.transform.position) * 14 * Time.deltaTime;
+                    myTelek.GetComponent<Rigidbody>().velocity = Vector3.zero;
+                    myTelek.GetComponent<Collider>().isTrigger = true;
+                    myTelek.transform.rotation = Quaternion.RotateTowards(myTelek.transform.rotation, Quaternion.LookRotation(ShootDirection), Time.deltaTime * 800);
+                }
             }
         }
         else if (myTelek != null)
         {
-            myTelek.GetComponent<Rigidbody>().velocity = ShootDirection * 80;
+            if (myTelek.GetComponent<Rigidbody>() != null)
+                myTelek.GetComponent<Rigidbody>().velocity = ShootDirection * 80;
+
             myTelek.GetComponent<Collider>().isTrigger = false;
             myTelek = null;
         }
@@ -184,6 +228,7 @@ public class Catcher : MonoBehaviour {
     {
         ActiveTimer = MaxActiveTimer;
     }
+    
 
     bool IsActive()
     {
@@ -200,6 +245,8 @@ public class Catcher : MonoBehaviour {
         arsenalRotationSpeed = 2;
         arsenalRadius = 1.5f;
         bulletForwardOverride = arsenalDirReference.forward;
+
+        bulletCircle = true;
 
         if (Input.GetButtonDown("X_Button"))
         {
@@ -227,6 +274,7 @@ public class Catcher : MonoBehaviour {
                     bulletForwardOverride = Vector3.zero;
                     OriginalOffset = Vector3.zero;
                     GoalOffset = Vector3.up * 2 + arsenalParent.forward * 8;
+                    bulletCircle = true;
                 } break;
 
             case 1:
@@ -261,14 +309,38 @@ public class Catcher : MonoBehaviour {
                     bulletForwardOverride = Vector3.zero;
                     arsenalRotationSpeed = 5;
                     arsenalRadius = 3;
+                    bulletCircle = true;
 
                     if (Input.GetButton("B_Button") == false)
                         State = States.Idle;
                 }
                 break;
-                
         }
+    }
 
+    void Pull()
+    {
+        switch (InnerState)
+        {
+            case 0:
+                {
+                    SetActive();
+                    stateTimer = 0;
+                    for (int i = 0; i < Arsenal.Count; i++)
+                    {
+                        Vector3 vecToTelek = myTelek.transform.position - arsenalParent.transform.position;
+                        Arsenal[i].transform.position = arsenalParent.transform.position + vecToTelek * ((float) i / Arsenal.Count);
+                    }
+
+                    myTelek.transform.position = myTelekOGPosition;
+                    
+                    bulletCircle = false;
+
+                    if (Input.GetAxis("LeftTrigger") > -0.1f)
+                        State = States.Idle;
+                }
+                break;
+        }
     }
 
     void OnTriggerEnter (Collider hit)
