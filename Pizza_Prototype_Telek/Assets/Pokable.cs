@@ -5,7 +5,7 @@ using UnityEngine;
 public class Pokable : MonoBehaviour {
 
     Poker previousPoker = null;
-    Poker myPoker = null;
+    [HideInInspector] public Poker myPoker = null;
 
     float previousPokerCooldown = 0;
 

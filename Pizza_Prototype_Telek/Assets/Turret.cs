@@ -17,15 +17,21 @@ public class Turret : MonoBehaviour {
 	}
 	
 	// Update is called once per frame
-	void Update () {
+	void Update ()
+    {
+
+        if (justShootForward == false && target != null)
+            transform.forward = (target.position - transform.position).normalized;
+
         if (time < 0)
         {
             GameObject clone = Instantiate(bulletPrefab);
             clone.transform.position = transform.position;
-            clone.GetComponent<Rigidbody>().velocity = (justShootForward ? transform.forward : (target.position - transform.position).normalized) * bulletSpeed;
+            clone.GetComponent<Rigidbody>().velocity = (justShootForward ? transform.forward : -(target.position - transform.position).normalized) * bulletSpeed;
             clone.transform.forward = clone.GetComponent<Rigidbody>().velocity.normalized;
             loop++;
 
+            
             if (loop % bulletsPerShot != 0 || (GetComponent<Pokable>() != null && GetComponent<Pokable>().IsPoked))
             {
                 time = 0.2f;
@@ -38,4 +44,11 @@ public class Turret : MonoBehaviour {
 
         time -= Time.deltaTime;
 	}
+
+    void Attract(Attractor attractor)
+    {
+        target = attractor.transform;
+        justShootForward = false;
+        attractor.Caught(transform);
+    }
 }
